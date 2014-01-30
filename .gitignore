@@ -1,0 +1,12 @@
+*.tlog
+*.lastbuildstate
+*.obj
+*.sdf
+*.ipch
+*.lib
+*.pdb
+ReadMe.txt
+*.vcxproj.filters
+*.log
+*.idb
+*.pch
