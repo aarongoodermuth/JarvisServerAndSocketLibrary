@@ -16,7 +16,7 @@ namespace JarvisSS
 	friend class JarvisServer;
 	public:
 		// constructors/destructors
-		JarvisSocket(std::string, std::string, bool fBlocking = true, bool fQuick = false);
+		JarvisSocket(std::string, int, bool fBlocking = true, bool fQuick = false);
 		JarvisSocket(SOCKET, sockaddr*, bool fBlocking = true, bool fQuick = false);
 		~JarvisSocket();
 		
@@ -27,10 +27,10 @@ namespace JarvisSS
 		bool FSend(void*, int);
 		bool FValid();
 		std::string getStrIp();
-		std::string getStrPort();
+		int getIPort();
 	
 	protected:
-		static bool _fValid;
+		
 		static void FatalErr(const wchar_t*);
 		static void NormalErr(const wchar_t* = L"", bool fSilent = false);
 
@@ -45,13 +45,13 @@ namespace JarvisSS
 		void* _pbRecieve;
 		void* _pbSend;
 		std::string _strIp;
-		std::string _strPort;
+		int _iPort;
 
 		// member functions
 		static void Setup();
 		static void Teardown();
 		static std::string StrAddrFromPsockaddr(sockaddr*);
-		static std::string StrPortFromPsockaddr(sockaddr*);
+		static int IPortFromPsockaddr(sockaddr*);
 
 		void InitMBufs();
 	};

@@ -21,7 +21,7 @@ const struct addrinfo JarvisSocket::DEFAULT_HINTS =
 /*** CONSTRUCTORS / DESTRUCTORS ***/
 /**********************************/
 
-JarvisSocket::JarvisSocket(std::string strAddress, std::string strPort, bool fBlocking, bool fQuick)
+JarvisSocket::JarvisSocket(std::string strAddress, int iPort, bool fBlocking, bool fQuick)
 {
 	int iResult;
 	addrinfo *result;
@@ -30,16 +30,15 @@ JarvisSocket::JarvisSocket(std::string strAddress, std::string strPort, bool fBl
 	_fBlockingIO = true; /*temp*/ if(!fBlocking){FatalErr(L"Non Blocking sockets not yet implemented");}
 	_fQuick = false; /*temp*/ if(!fBlocking){FatalErr(L"Quick sockets not yet implemented");}
 	_sock = INVALID_SOCKET;
-	_fValid = true;
 	_strIp = strAddress;
-	_strPort = strPort;
+	_iPort = iPort;
 
 	InitMBufs();
 	
 	Setup();
 	
 	// resolve to server address and port
-	if (0 != getaddrinfo(strAddress.c_str(), strPort.c_str(), &DEFAULT_HINTS, &result))
+	if (0 != getaddrinfo(strAddress.c_str(), std::to_string(iPort).c_str(), &DEFAULT_HINTS, &result))
 	{
 		NormalErr(L"Failed resolving server address and port");
 	}
@@ -71,9 +70,8 @@ JarvisSocket::JarvisSocket(std::string strAddress, std::string strPort, bool fBl
 JarvisSocket::JarvisSocket(SOCKET sockInit, sockaddr* paddr, bool fBlocking, bool fQuick)
 {
 	_sock = sockInit;
-	_fValid = true;
 	_strIp = StrAddrFromPsockaddr(paddr);
-	_strPort = StrPortFromPsockaddr(paddr);
+	_iPort = IPortFromPsockaddr(paddr);
 	_fBlockingIO = true; /*temp*/ if (!fBlocking){ NormalErr(L"Non Blocking sockets not yet implemented"); }
 	_fQuick = false; /*temp*/ if (!fBlocking){ NormalErr(L"Quick sockets not yet implemented"); }
 	
@@ -121,7 +119,7 @@ bool JarvisSocket::FSend(void* pData, int iSize)
 
 bool JarvisSocket::FValid()
 {
-	return _fValid && _fAllValid;
+	return _fAllValid;
 }
 
 std::string JarvisSocket::getStrIp()
@@ -129,9 +127,9 @@ std::string JarvisSocket::getStrIp()
 	return _strIp;
 }
 
-std::string JarvisSocket::getStrPort()
+int JarvisSocket::getIPort()
 {
-	return _strPort;
+	return _iPort;
 }
 
 /**********************************/
@@ -159,8 +157,6 @@ void JarvisSocket::NormalErr(const wchar_t* xwszMsg, bool fSilent)
 #ifdef _DEBUG
 	MessageBox(NULL, std::to_wstring(WSAGetLastError()).c_str(), L"WSAGetLastError failure code", 0);
 #endif
-
-	_fValid = false;
 }
 
 /********************************/
@@ -192,16 +188,11 @@ std::string JarvisSocket::StrAddrFromPsockaddr(sockaddr* client_addr)
 	return std::string(str);
 }
 
-std::string JarvisSocket::StrPortFromPsockaddr(sockaddr* client_addr)
+int JarvisSocket::IPortFromPsockaddr(sockaddr* client_addr)
 {
 	int cbBuf = (int)log10(MAXINT) + 2;
 	sockaddr_in* pV4Addr = (struct sockaddr_in*)&client_addr;
-	int ipPort = pV4Addr->sin_port;
-	char* buf = (char*)malloc(cbBuf);
-	_itoa_s(ipPort, buf, cbBuf, 10);
-	std::string retval = std::string(buf);
-	free(buf);
-	return retval;
+	return pV4Addr->sin_port;
 }
 
 void JarvisSocket::InitMBufs()

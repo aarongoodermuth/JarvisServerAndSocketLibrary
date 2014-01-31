@@ -9,16 +9,15 @@ using namespace JarvisSS;
 /*** CONSTRUCTORS / DESTRUCTORS ***/
 /**********************************/
 
-JarvisServer::JarvisServer(std::string strPort, void* pfdh)
+JarvisServer::JarvisServer(int iPort, void* pfdh)
 {
 	// init members
-	_pfdh = (void (*)(DataHandlerParams*)) pfdh; // converting pdh (type: pointer to data) to mpdh (type: pointer to a function returning void and taking DataHandlerParams* as an arg) 
+	_dhfp = (void (*)(DataHandlerParams*)) pfdh; // converting pdh (type: pointer to data) to mpdh (type: pointer to a function returning void and taking DataHandlerParams* as an arg) 
 	_fQuit = false;
-	_strPort = strPort;
+	_iPort = iPort;
 		
 	// do proper setup for windows sockets
 	Setup();
-	
 }
 
 JarvisServer::~JarvisServer()
@@ -55,7 +54,7 @@ void JarvisServer::Start()
 	sockaddr_in service;
 	service.sin_family = AF_INET;
 	service.sin_addr.s_addr = inet_addr("0.0.0.0");
-	service.sin_port = htons(atoi(_strPort.c_str()));	// no idea if this is right. look here for bugs if the port isnt the right port
+	service.sin_port = htons(_iPort);	// no idea if this is right. look here for bugs if the port isnt the right port
 
 	if (SOCKET_ERROR == bind(sockListen, (SOCKADDR *)& service, sizeof (service)))
 		JarvisSocket::FatalErr(L"Listen socket binding failed.");
@@ -141,7 +140,7 @@ DWORD WINAPI JarvisServer::SocketThreadFunc(void* pParams)
 		dhp.pbBuf = jsock.PbRecieve();
 		if (NULL == dhp.pbBuf)
 			break;
-		(socktp.pjserv->_pfdh)(&dhp);
+		(socktp.pjserv->_dhfp)(&dhp);
 	}	
 
 	return 0;
