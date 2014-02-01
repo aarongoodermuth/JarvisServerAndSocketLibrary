@@ -9,10 +9,10 @@ using namespace JarvisSS;
 /*** CONSTRUCTORS / DESTRUCTORS ***/
 /**********************************/
 
-JarvisServer::JarvisServer(int iPort, void* pfdh)
+JarvisServer::JarvisServer(int iPort, DataHandlerFunctionPointer dhfp)
 {
 	// init members
-	_dhfp = (void (*)(DataHandlerParams*)) pfdh; // converting pdh (type: pointer to data) to mpdh (type: pointer to a function returning void and taking DataHandlerParams* as an arg) 
+	_dhfp = dhfp; // converting pdh (type: pointer to data) to mpdh (type: pointer to a function returning void and taking DataHandlerParams* as an arg) 
 	_fQuit = false;
 	_iPort = iPort;
 		
@@ -22,7 +22,7 @@ JarvisServer::JarvisServer(int iPort, void* pfdh)
 
 JarvisServer::~JarvisServer()
 {
-	_fQuit = true;
+	Stop();
 	Teardown();
 }
 
@@ -97,7 +97,6 @@ void JarvisServer::Stop()
 /*** PRIVATE MEMBER FUNCTIONS ***/
 /********************************/
 
-
 void JarvisServer::Setup()
 {
 	WSADATA wsadata;
@@ -126,7 +125,6 @@ DWORD WINAPI JarvisServer::ServerThreadFunc(void* pParams)
 
 DWORD WINAPI JarvisServer::SocketThreadFunc(void* pParams)
 {
-	char* pbBbuf = (char*)malloc(M_BUF_SIZE);
 	SocketThreadParams socktp = *(SocketThreadParams*)pParams;
 	DataHandlerParams dhp;
 	free(pParams);

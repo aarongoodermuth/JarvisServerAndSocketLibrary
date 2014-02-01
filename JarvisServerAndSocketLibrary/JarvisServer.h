@@ -10,18 +10,17 @@ namespace JarvisSS
 	class JarvisServer
 	{
 	public:
-		// constructors/destructors
-		JarvisServer(int, void*);
-		~JarvisServer();
-		
 		// structure definitions	
 		struct DataHandlerParams
 		{
-			void* pbBuf;
+			char* pbBuf;
 			JarvisSocket* pjsock;
 		};
 		typedef void(*DataHandlerFunctionPointer)(DataHandlerParams*);
 
+		// constructors/destructors
+		JarvisServer(int, DataHandlerFunctionPointer);
+		~JarvisServer();
 		// member variables
 		const static int M_BUF_SIZE = 1024;
 		

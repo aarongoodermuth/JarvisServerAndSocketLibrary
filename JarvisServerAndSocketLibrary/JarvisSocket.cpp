@@ -23,48 +23,30 @@ const struct addrinfo JarvisSocket::DEFAULT_HINTS =
 
 JarvisSocket::JarvisSocket(std::string strAddress, int iPort, bool fBlocking, bool fQuick)
 {
-	int iResult;
-	addrinfo *result;
-	
 	// init member
 	_fBlockingIO = true; /*temp*/ if(!fBlocking){FatalErr(L"Non Blocking sockets not yet implemented");}
 	_fQuick = false; /*temp*/ if(!fBlocking){FatalErr(L"Quick sockets not yet implemented");}
 	_sock = INVALID_SOCKET;
 	_strIp = strAddress;
 	_iPort = iPort;
+	_paddrinfoResult = NULL;
 
 	InitMBufs();
 	
 	Setup();
 	
 	// resolve to server address and port
-	if (0 != getaddrinfo(strAddress.c_str(), std::to_string(iPort).c_str(), &DEFAULT_HINTS, &result))
+	if (0 != getaddrinfo(strAddress.c_str(), std::to_string(iPort).c_str(), &DEFAULT_HINTS, &_paddrinfoResult))
 	{
 		NormalErr(L"Failed resolving server address and port");
 	}
 
 	// create socket
-	_sock = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
+	_sock = socket(_paddrinfoResult->ai_family, _paddrinfoResult->ai_socktype, _paddrinfoResult->ai_protocol);
 	if (INVALID_SOCKET == _sock)
 	{
 		NormalErr(L"Failed creating socket");
 	}
-		
-	// connect socket
-	for (struct addrinfo *rp = result; rp != NULL; rp = rp->ai_next)
-	{
-		if(!(iResult = connect(_sock, rp->ai_addr, rp->ai_addrlen)))
-		{
-			break;
-		}
-	}
-		
-	if(iResult)
-	{
-		NormalErr(L"Failed connecting to server");
-	}
-
-	freeaddrinfo(result);
 }
 
 JarvisSocket::JarvisSocket(SOCKET sockInit, sockaddr* paddr, bool fBlocking, bool fQuick)
@@ -74,6 +56,7 @@ JarvisSocket::JarvisSocket(SOCKET sockInit, sockaddr* paddr, bool fBlocking, boo
 	_iPort = IPortFromPsockaddr(paddr);
 	_fBlockingIO = true; /*temp*/ if (!fBlocking){ NormalErr(L"Non Blocking sockets not yet implemented"); }
 	_fQuick = false; /*temp*/ if (!fBlocking){ NormalErr(L"Quick sockets not yet implemented"); }
+	_paddrinfoResult = NULL;
 	
 	Setup();
 	InitMBufs();
@@ -90,8 +73,8 @@ JarvisSocket::~JarvisSocket()
 		_sock = INVALID_SOCKET;
 	}
 
-	free(_pbSend);
 	free(_pbRecieve);
+	freeaddrinfo(_paddrinfoResult);
 
 	Teardown();
 }
@@ -104,17 +87,39 @@ SOCKET JarvisSocket::get()
 {
 	return FValid() ? _sock : INVALID_SOCKET;
 }
-
-void* JarvisSocket::PbRecieve()
+#include <string>
+char* JarvisSocket::PbRecieve()
 {
 	ZeroMemory(_pbRecieve, BUF_SIZE);
-	int cbRecieved = recv(_sock, (char*)_pbRecieve, BUF_SIZE, 0);
+	int cbRecieved = recv(_sock, _pbRecieve, BUF_SIZE, 0);
+	std::string test = std::string(_pbRecieve);
 	return (FValid() && cbRecieved > 0) ? _pbRecieve : NULL;
 }
 
-bool JarvisSocket::FSend(void* pData, int iSize)
+bool JarvisSocket::FConnect()
 {
-	return (SOCKET_ERROR != send(_sock, (const char*)_pbSend, iSize, 0)) && FValid();
+	int iResult = 0;
+	bool fStatus = false;
+	_sock = socket(_paddrinfoResult->ai_family, _paddrinfoResult->ai_socktype, _paddrinfoResult->ai_protocol);
+	// connect socket
+	for (struct addrinfo *rp = _paddrinfoResult; rp != NULL; rp = rp->ai_next)
+	{
+		if (!(iResult = connect(_sock, rp->ai_addr, rp->ai_addrlen)))
+		{
+			fStatus = true;
+		}
+		else if (WSAECONNREFUSED != iResult)
+		{
+			printf("Error: %d\n", WSAGetLastError());
+		}
+	}
+
+	return fStatus;
+}
+
+bool JarvisSocket::FSend(const char* pbData, int iSize)
+{
+	return (SOCKET_ERROR != send(_sock, pbData, iSize, 0)) && FValid();
 }
 
 bool JarvisSocket::FValid()
@@ -155,7 +160,10 @@ void JarvisSocket::NormalErr(const wchar_t* xwszMsg, bool fSilent)
 	}
 
 #ifdef _DEBUG
-	MessageBox(NULL, std::to_wstring(WSAGetLastError()).c_str(), L"WSAGetLastError failure code", 0);
+	if (!fSilent)
+	{
+		MessageBox(NULL, std::to_wstring(WSAGetLastError()).c_str(), L"WSAGetLastError failure code", 0);
+	}
 #endif
 }
 
@@ -198,5 +206,4 @@ int JarvisSocket::IPortFromPsockaddr(sockaddr* client_addr)
 void JarvisSocket::InitMBufs()
 {
 	_pbRecieve = (char*)malloc(BUF_SIZE);
-	_pbSend = (char*)malloc(BUF_SIZE);
 }

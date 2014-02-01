@@ -23,8 +23,9 @@ namespace JarvisSS
 		// member functions
 		void DestroySock();
 		SOCKET get();
-		void* PbRecieve();
-		bool FSend(void*, int);
+		char* PbRecieve();
+		bool FConnect();
+		bool FSend(const char*, int);
 		bool FValid();
 		std::string getStrIp();
 		int getIPort();
@@ -42,10 +43,11 @@ namespace JarvisSS
 		bool _fQuick;
 		bool _fBlockingIO;
 		SOCKET _sock;
-		void* _pbRecieve;
-		void* _pbSend;
+		char* _pbRecieve;
+		//char* _pbSend;
 		std::string _strIp;
 		int _iPort;
+		addrinfo* _paddrinfoResult;
 
 		// member functions
 		static void Setup();
