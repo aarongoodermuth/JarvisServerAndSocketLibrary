@@ -15,9 +15,12 @@ namespace JarvisSS
 	{
 	friend class JarvisServer;
 	public:
-		// constructors/destructors
+		// constructors/destructors/assignment operators
 		JarvisSocket(std::string, int, bool fBlocking = true, bool fQuick = false);
 		JarvisSocket(SOCKET, sockaddr*, bool fBlocking = true, bool fQuick = false);
+		JarvisSocket(const JarvisSocket& other);
+		JarvisSocket& operator=(const JarvisSocket& rhs);
+
 		~JarvisSocket();
 		
 		// member functions
@@ -43,11 +46,9 @@ namespace JarvisSS
 		bool _fQuick;
 		bool _fBlockingIO;
 		SOCKET _sock;
-		char* _pbRecieve;
-		//char* _pbSend;
+		char _bRecieve[BUF_SIZE];
 		std::string _strIp;
 		int _iPort;
-		addrinfo* _paddrinfoResult;
 
 		// member functions
 		static void Setup();
