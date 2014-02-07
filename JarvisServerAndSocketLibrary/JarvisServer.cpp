@@ -9,12 +9,13 @@ using namespace JarvisSS;
 /*** CONSTRUCTORS / DESTRUCTORS ***/
 /**********************************/
 
-JarvisServer::JarvisServer(int iPort, DataHandlerFunctionPointer dhfp)
+JarvisServer::JarvisServer(int iPort, DataHandlerFunctionPointer dhfp, DisconnectFunctionPointer dfnp)
 {
 	// init members
 	_dhfp = dhfp; // converting pdh (type: pointer to data) to mpdh (type: pointer to a function returning void and taking DataHandlerParams* as an arg) 
 	_fQuit = false;
 	_iPort = iPort;
+	_pfnOnDisconnect = dfnp;
 		
 	// do proper setup for windows sockets
 	Setup();
@@ -118,7 +119,6 @@ DWORD WINAPI JarvisServer::ServerThreadFunc(void* pParams)
 	JarvisServer::Setup();
 	jserv->Start();
 	Teardown();
-	delete jserv;
 
 	return 0;
 }
@@ -137,10 +137,21 @@ DWORD WINAPI JarvisServer::SocketThreadFunc(void* pParams)
 		// receive data on socket and handle the data
 		dhp.pbBuf = jsock.PbRecieve();
 		if (NULL == dhp.pbBuf)
+		{
+			socktp.pjserv->OnDisconnect();
 			break;
+		}
 		(socktp.pjserv->_dhfp)(&dhp);
 	}	
 
 	return 0;
 	// JarvisSocket going out of scope should take care of disposing of the socket correctly
+}
+
+void JarvisServer::OnDisconnect()
+{
+	if (NULL != _pfnOnDisconnect)
+	{
+		(*_pfnOnDisconnect)();
+	}
 }

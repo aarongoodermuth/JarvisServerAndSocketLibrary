@@ -15,12 +15,14 @@ namespace JarvisSS
 	{
 	friend class JarvisServer;
 	public:
+		// typedefs
+		typedef void(*DisconnectFunctionPointer)();
+
 		// constructors/destructors/assignment operators
-		JarvisSocket(std::string, int, bool fBlocking = true, bool fQuick = false);
-		JarvisSocket(SOCKET, sockaddr*, bool fBlocking = true, bool fQuick = false);
+		JarvisSocket(std::string, int, DisconnectFunctionPointer pfn = NULL);
+		JarvisSocket(SOCKET, sockaddr*, DisconnectFunctionPointer pfn = NULL);
 		JarvisSocket(const JarvisSocket& other);
 		JarvisSocket& operator=(const JarvisSocket& rhs);
-
 		~JarvisSocket();
 		
 		// member functions
@@ -30,6 +32,7 @@ namespace JarvisSS
 		bool FConnect();
 		bool FSend(const char*, int);
 		bool FValid();
+		bool FIsConnected();
 		std::string getStrIp();
 		int getIPort();
 	
@@ -43,8 +46,8 @@ namespace JarvisSS
 		static bool _fAllValid;
 		static const addrinfo DEFAULT_HINTS;
 
-		bool _fQuick;
-		bool _fBlockingIO;
+		bool _fConnected;
+		DisconnectFunctionPointer _pfnOnDisconnect;
 		SOCKET _sock;
 		char _bRecieve[BUF_SIZE];
 		std::string _strIp;
@@ -57,5 +60,6 @@ namespace JarvisSS
 		static int IPortFromPsockaddr(sockaddr*);
 
 		void InitMBufs();
+		void OnDisconnect();
 	};
 }

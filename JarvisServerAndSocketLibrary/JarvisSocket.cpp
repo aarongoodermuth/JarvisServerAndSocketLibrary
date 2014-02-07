@@ -21,26 +21,26 @@ const struct addrinfo JarvisSocket::DEFAULT_HINTS =
 /*** CONSTRUCTORS / DESTRUCTORS ***/
 /**********************************/
 
-JarvisSocket::JarvisSocket(std::string strAddress, int iPort, bool fBlocking, bool fQuick)
+JarvisSocket::JarvisSocket(std::string strAddress, int iPort, DisconnectFunctionPointer pfn)
 {
 	// init member
-	_fBlockingIO = true; /*temp*/ if(!fBlocking){FatalErr(L"Non Blocking sockets not yet implemented");}
-	_fQuick = false; /*temp*/ if(!fBlocking){FatalErr(L"Quick sockets not yet implemented");}
 	_sock = INVALID_SOCKET;
 	_strIp = strAddress;
 	_iPort = iPort;
+	_pfnOnDisconnect = pfn;
+	_fConnected = false;
 
 	InitMBufs();
 	Setup();
 }
 
-JarvisSocket::JarvisSocket(SOCKET sockInit, sockaddr* paddr, bool fBlocking, bool fQuick)
+JarvisSocket::JarvisSocket(SOCKET sockInit, sockaddr* paddr, DisconnectFunctionPointer pfn)
 {
 	_sock = sockInit;
 	_strIp = StrAddrFromPsockaddr(paddr);
 	_iPort = IPortFromPsockaddr(paddr);
-	_fBlockingIO = true; /*temp*/ if (!fBlocking){ NormalErr(L"Non Blocking sockets not yet implemented"); }
-	_fQuick = false; /*temp*/ if (!fBlocking){ NormalErr(L"Quick sockets not yet implemented"); }
+	_pfnOnDisconnect = pfn;
+	_fConnected = false;
 	
 	InitMBufs();
 	Setup();
@@ -48,24 +48,24 @@ JarvisSocket::JarvisSocket(SOCKET sockInit, sockaddr* paddr, bool fBlocking, boo
 
 JarvisSocket::JarvisSocket(const JarvisSocket& other)
 {
-	_fQuick = other._fQuick;
-	_fBlockingIO = other._fBlockingIO;
 	_sock = other._sock;
 	_strIp = other._strIp;
 	_iPort = other._iPort;
+	_pfnOnDisconnect = other._pfnOnDisconnect;
+	_fConnected = other._fConnected;
 
 	memcpy_s(_bRecieve, BUF_SIZE, other._bRecieve, BUF_SIZE);
 }
 
-JarvisSocket& JarvisSocket::operator=(const JarvisSocket& rhs)
+JarvisSocket& JarvisSocket::operator=(const JarvisSocket& other)
 {
-	_fQuick = rhs._fQuick;
-	_fBlockingIO = rhs._fBlockingIO;
-	_sock = rhs._sock;
-	_strIp = rhs._strIp;
-	_iPort = rhs._iPort;
+	_sock = other._sock;
+	_strIp = other._strIp;
+	_iPort = other._iPort;
+	_pfnOnDisconnect = other._pfnOnDisconnect;
+	_fConnected = other._fConnected;
 
-	memcpy_s((void*)_bRecieve[0], BUF_SIZE, rhs._bRecieve, BUF_SIZE);
+	memcpy_s((void*)_bRecieve[0], BUF_SIZE, other._bRecieve, BUF_SIZE);
 	return *this;
 }
 
@@ -123,6 +123,7 @@ bool JarvisSocket::FConnect()
 		if (!(iResult = connect(_sock, rp->ai_addr, rp->ai_addrlen)))
 		{
 			fStatus = true;
+			_fConnected = true;
 		}
 		else if (WSAECONNREFUSED != (iError = WSAGetLastError()))
 		{
@@ -135,12 +136,45 @@ bool JarvisSocket::FConnect()
 
 bool JarvisSocket::FSend(const char* pbData, int iSize)
 {
-	return (SOCKET_ERROR != send(_sock, pbData, iSize, 0)) && FValid();
+	bool fSucceded;
+	if (!FIsConnected())
+		return false;
+	
+	fSucceded= (SOCKET_ERROR != send(_sock, pbData, iSize, 0)) && FValid();
+
+	if (!fSucceded)
+	{
+		switch (int iErr = WSAGetLastError())
+		{
+			// Connection was Lost cases
+			case WSAENETDOWN:
+			case WSAENETUNREACH:
+			case WSAENETRESET:
+			case WSAECONNABORTED:
+			case WSAECONNRESET:
+			case WSAENOTCONN:
+			case WSAECONNREFUSED:
+			case WSAEHOSTDOWN:
+			case WSAEDISCON:
+				OnDisconnect();
+				break;
+			//Fatal Error cases
+			default:
+				FatalErr(L"WSAGetLastError: " + iErr);			
+		}
+	}
+
+	return fSucceded;
 }
 
 bool JarvisSocket::FValid()
 {
 	return _fAllValid;
+}
+
+bool JarvisSocket::FIsConnected()
+{
+	return _fConnected;
 }
 
 std::string JarvisSocket::getStrIp()
@@ -222,4 +256,13 @@ int JarvisSocket::IPortFromPsockaddr(sockaddr* client_addr)
 void JarvisSocket::InitMBufs()
 {
 	ZeroMemory(&_bRecieve, BUF_SIZE);
+}
+
+void JarvisSocket::OnDisconnect()
+{
+	_fConnected = false;
+	if (NULL != _pfnOnDisconnect)
+	{
+		(_pfnOnDisconnect)();
+	}
 }
