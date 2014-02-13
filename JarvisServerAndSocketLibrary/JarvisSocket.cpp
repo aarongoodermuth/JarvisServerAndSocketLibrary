@@ -91,10 +91,15 @@ SOCKET JarvisSocket::get()
 {
 	return FValid() ? _sock : INVALID_SOCKET;
 }
-#include <string>
+
 char* JarvisSocket::PbRecieve()
 {
+	ZeroMemory(&_bRecieve[0], BUF_SIZE);
 	int cbRecieved = recv(_sock, _bRecieve, BUF_SIZE, 0);
+	if (cbRecieved)
+	{
+		_fConnected = true;
+	}
 	return (FValid() && cbRecieved > 0) ? &_bRecieve[0] : NULL;
 }
 
