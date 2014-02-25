@@ -7,6 +7,7 @@
 
 namespace JarvisSS
 {
+	class IDataHandler;
 	class JarvisServer
 	{
 	public:
@@ -15,12 +16,13 @@ namespace JarvisSS
 		{
 			char* pbBuf;
 			JarvisSocket* pjsock;
+			JarvisServer* pjserv;
 		};
 		typedef void(*DataHandlerFunctionPointer)(DataHandlerParams*);
 		typedef void(*DisconnectFunctionPointer)();
 
 		// constructors/destructors
-		JarvisServer(int, DataHandlerFunctionPointer, DisconnectFunctionPointer dfnp = NULL);
+		JarvisServer(int, IDataHandler* pdh, DisconnectFunctionPointer dfnp = NULL);
 		~JarvisServer();
 		// member variables
 		const static int M_BUF_SIZE = 1024;
@@ -40,7 +42,7 @@ namespace JarvisSS
 		};
 		
 		// member variables
-		DataHandlerFunctionPointer _dhfp; // pointer to a function with return type: void that takes arguments of type DataHandlerParams*
+		IDataHandler* _pdh; // pointer to a function with return type: void that takes arguments of type DataHandlerParams*
 		DisconnectFunctionPointer _pfnOnDisconnect;
 		bool _fQuit;
 		int _iPort;

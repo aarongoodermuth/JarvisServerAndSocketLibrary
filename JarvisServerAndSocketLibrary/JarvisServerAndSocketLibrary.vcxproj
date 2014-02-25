@@ -81,6 +81,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="IDataHandler.h" />
     <ClInclude Include="JarvisServer.h" />
     <ClInclude Include="JarvisServerAndSocketLibrary.h" />
     <ClInclude Include="JarvisSocket.h" />

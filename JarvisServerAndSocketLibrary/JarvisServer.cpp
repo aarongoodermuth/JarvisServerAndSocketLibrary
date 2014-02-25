@@ -2,6 +2,7 @@
 //#include <string>
 #include "JarvisServer.h"
 #include "JarvisSocket.h"
+#include "IDataHandler.h"
 
 using namespace JarvisSS;
 
@@ -9,10 +10,10 @@ using namespace JarvisSS;
 /*** CONSTRUCTORS / DESTRUCTORS ***/
 /**********************************/
 
-JarvisServer::JarvisServer(int iPort, DataHandlerFunctionPointer dhfp, DisconnectFunctionPointer dfnp)
+JarvisServer::JarvisServer(int iPort, IDataHandler* pdh, DisconnectFunctionPointer dfnp)
 {
 	// init members
-	_dhfp = dhfp; // converting pdh (type: pointer to data) to mpdh (type: pointer to a function returning void and taking DataHandlerParams* as an arg) 
+	_pdh = pdh; // converting pdh (type: pointer to data) to mpdh (type: pointer to a function returning void and taking DataHandlerParams* as an arg) 
 	_fQuit = false;
 	_iPort = iPort;
 	_pfnOnDisconnect = dfnp;
@@ -58,10 +59,19 @@ void JarvisServer::Start()
 	service.sin_port = htons(_iPort);	// no idea if this is right. look here for bugs if the port isnt the right port
 
 	if (SOCKET_ERROR == bind(sockListen, (SOCKADDR *)& service, sizeof (service)))
-		JarvisSocket::FatalErr(L"Listen socket binding failed.");
-
-	int test = WSAGetLastError();
-	//MessageBox(NULL, std::to_wstring(test).c_str(), L"WSAGetLastError failure code", 0);
+	{
+		if (WSAEADDRINUSE == WSAGetLastError())
+		{
+			JarvisSocket::FatalErr(L"Port already in use");
+		}
+		else
+		{
+			JarvisSocket::FatalErr(L"Listen socket binding failed.");
+			int test = WSAGetLastError();
+			MessageBox(NULL, std::to_wstring(test).c_str(), L"WSAGetLastError failure code", 0);
+		}
+		
+	}
 
 	if (0 != listen(sockListen, SOMAXCONN))
 		JarvisSocket::FatalErr(L"Listen socket listening failed.");
@@ -131,6 +141,7 @@ DWORD WINAPI JarvisServer::SocketThreadFunc(void* pParams)
 
 	JarvisSocket jsock = JarvisSocket(*socktp.psock, socktp.paddr);
 	dhp.pjsock = &jsock;
+	dhp.pjserv = socktp.pjserv;
 	
 	while(true) // while connection is alive
 	{
@@ -141,7 +152,7 @@ DWORD WINAPI JarvisServer::SocketThreadFunc(void* pParams)
 			socktp.pjserv->OnDisconnect();
 			break;
 		}
-		(socktp.pjserv->_dhfp)(&dhp);
+		(socktp.pjserv->_pdh)->HandleData(&dhp);
 	}	
 
 	return 0;
