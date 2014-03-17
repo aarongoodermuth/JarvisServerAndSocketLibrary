@@ -1,4 +1,6 @@
 #pragma once
+#undef _WINSOCKAPI_
+#define _WINSOCKAPI_
 #include "JarvisServer.h"
 #include "JarvisSocket.h"
 #include "IDataHandler.h"
