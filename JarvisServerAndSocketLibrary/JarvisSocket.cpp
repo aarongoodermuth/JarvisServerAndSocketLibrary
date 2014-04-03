@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "JarvisSocket.h"
+#include <assert.h>
 
 using namespace JarvisSS;
 
@@ -75,7 +76,7 @@ JarvisSocket::~JarvisSocket()
 	{
 		if(closesocket(_sock))
 		{
-			FatalErr(L"Error closing socket");
+			assert(false, "Failed closing the socket.");
 		}
 		_sock = INVALID_SOCKET;
 	}
@@ -198,28 +199,29 @@ int JarvisSocket::getIPort()
 
 void JarvisSocket::FatalErr(const wchar_t* xwszMsg)
 {
-	MessageBox(NULL, xwszMsg, L"Fatal Socket Error", 0);
-
 #ifdef _DEBUG
-	MessageBox(NULL, std::to_wstring(WSAGetLastError()).c_str(), L"WSAGetLastError failure code", 0);
+	assert(false, "Fatal Socket Error.");
 #endif
 
+	MessageBox(NULL, xwszMsg, L"Fatal Socket Error", 0);
 	_fAllValid = false;
 }
 
 void JarvisSocket::NormalErr(const wchar_t* xwszMsg, bool fSilent)
 {
-	if (!fSilent)
-	{
-		MessageBox(NULL, xwszMsg, L"Socket Error", 0);
-	}
-
 #ifdef _DEBUG
+	assert(false, "Normal Socket Error.");
 	if (!fSilent)
 	{
 		MessageBox(NULL, std::to_wstring(WSAGetLastError()).c_str(), L"WSAGetLastError failure code", 0);
 	}
 #endif
+
+	if (!fSilent)
+	{
+		MessageBox(NULL, xwszMsg, L"Socket Error", 0);
+	}
+	_fAllValid = false;
 }
 
 /********************************/
