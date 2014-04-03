@@ -15,7 +15,7 @@ JarvisServer::JarvisServer(int iPort, IDataHandler* pdh, DisconnectFunctionPoint
 	// init members
 	_pdh = pdh; // converting pdh (type: pointer to data) to mpdh (type: pointer to a function returning void and taking DataHandlerParams* as an arg) 
 	_fQuit = false;
-	_fHasQuit = false;
+	_fHasQuit = true;
 	_iPort = iPort;
 	_pfnOnDisconnect = dfnp;
 		
@@ -44,6 +44,7 @@ void JarvisServer::Start()
 	JarvisSocket* pjsock;
 	sockaddr addr;
 	SocketThreadParams* socktp;
+	_fHasQuit = false;
 
 	// create socket to listen on and set it to listen
 	SOCKET sockListen = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
