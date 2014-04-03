@@ -36,8 +36,7 @@ namespace JarvisSS
 		// structure definitions
 		struct SocketThreadParams
 		{
-			SOCKET* psock;
-			sockaddr* paddr;
+			JarvisSocket* pjsock;
 			JarvisServer* pjserv;
 		};
 		
@@ -45,6 +44,7 @@ namespace JarvisSS
 		IDataHandler* _pdh; // pointer to a function with return type: void that takes arguments of type DataHandlerParams*
 		DisconnectFunctionPointer _pfnOnDisconnect;
 		bool _fQuit;
+		bool _fHasQuit;
 		int _iPort;
 	
 		// member functions

@@ -1,5 +1,5 @@
 #include "stdafx.h"
-//#include <string>
+#include <assert.h>
 #include "JarvisServer.h"
 #include "JarvisSocket.h"
 #include "IDataHandler.h"
@@ -15,6 +15,7 @@ JarvisServer::JarvisServer(int iPort, IDataHandler* pdh, DisconnectFunctionPoint
 	// init members
 	_pdh = pdh; // converting pdh (type: pointer to data) to mpdh (type: pointer to a function returning void and taking DataHandlerParams* as an arg) 
 	_fQuit = false;
+	_fHasQuit = false;
 	_iPort = iPort;
 	_pfnOnDisconnect = dfnp;
 		
@@ -70,11 +71,17 @@ void JarvisServer::Start()
 			int test = WSAGetLastError();
 			MessageBox(NULL, std::to_wstring(test).c_str(), L"WSAGetLastError failure code", 0);
 		}
-		
 	}
 
 	if (0 != listen(sockListen, SOMAXCONN))
 		JarvisSocket::FatalErr(L"Listen socket listening failed.");
+
+	// make non blocking
+	u_long NonBlock = 1;
+	if (ioctlsocket(sockListen, FIONBIO, &NonBlock) == SOCKET_ERROR)
+	{
+		assert(false, "Setting non blocking failed");
+	}
 
 	while (!_fQuit)
 	{
@@ -90,18 +97,19 @@ void JarvisServer::Start()
 
 		// send them to other threads to do work
 		socktp = (SocketThreadParams*)malloc(sizeof(SocketThreadParams));
-		socktp->paddr = &addr;
-		socktp->psock = &sockTemp;
+		socktp->pjsock = pjsock;
 		socktp->pjserv = this;
 		CreateThread(NULL, 0, JarvisServer::SocketThreadFunc, socktp, 0, NULL);
 	}
 
-	closesocket(sockListen);
+	closesocket(sockListen); // TODO: Check return value
+	_fHasQuit = true;
 }
 
 void JarvisServer::Stop()
 {
 	_fQuit = true;
+	while (!_fHasQuit){ Sleep(0); }// wait for signal that we really closed
 }
 
 /********************************/
@@ -139,14 +147,13 @@ DWORD WINAPI JarvisServer::SocketThreadFunc(void* pParams)
 	DataHandlerParams dhp;
 	free(pParams);
 
-	JarvisSocket jsock = JarvisSocket(*socktp.psock, socktp.paddr);
-	dhp.pjsock = &jsock;
+	dhp.pjsock = socktp.pjsock;
 	dhp.pjserv = socktp.pjserv;
 	
 	while(true) // while connection is alive
 	{
 		// receive data on socket and handle the data
-		dhp.pbBuf = jsock.PbRecieve();
+		dhp.pbBuf = socktp.pjsock->PbRecieve();
 		if (NULL == dhp.pbBuf)
 		{
 			socktp.pjserv->OnDisconnect();
@@ -155,6 +162,7 @@ DWORD WINAPI JarvisServer::SocketThreadFunc(void* pParams)
 		(socktp.pjserv->_pdh)->HandleData(&dhp);
 	}	
 
+	delete socktp.pjsock;
 	return 0;
 	// JarvisSocket going out of scope should take care of disposing of the socket correctly
 }
