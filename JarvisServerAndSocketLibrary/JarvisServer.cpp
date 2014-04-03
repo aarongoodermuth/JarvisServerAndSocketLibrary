@@ -80,7 +80,7 @@ void JarvisServer::Start()
 	u_long NonBlock = 1;
 	if (ioctlsocket(sockListen, FIONBIO, &NonBlock) == SOCKET_ERROR)
 	{
-		assert(false, "Setting non blocking failed");
+		assert(false);
 	}
 
 	while (!_fQuit)

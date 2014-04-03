@@ -76,7 +76,7 @@ JarvisSocket::~JarvisSocket()
 	{
 		if(closesocket(_sock))
 		{
-			assert(false, "Failed closing the socket.");
+			assert(false);
 		}
 		_sock = INVALID_SOCKET;
 	}
@@ -200,7 +200,7 @@ int JarvisSocket::getIPort()
 void JarvisSocket::FatalErr(const wchar_t* xwszMsg)
 {
 #ifdef _DEBUG
-	assert(false, "Fatal Socket Error.");
+	assert(false);
 #endif
 
 	MessageBox(NULL, xwszMsg, L"Fatal Socket Error", 0);
@@ -210,7 +210,7 @@ void JarvisSocket::FatalErr(const wchar_t* xwszMsg)
 void JarvisSocket::NormalErr(const wchar_t* xwszMsg, bool fSilent)
 {
 #ifdef _DEBUG
-	assert(false, "Normal Socket Error.");
+	assert(false);
 	if (!fSilent)
 	{
 		MessageBox(NULL, std::to_wstring(WSAGetLastError()).c_str(), L"WSAGetLastError failure code", 0);
