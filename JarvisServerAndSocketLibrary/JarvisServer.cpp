@@ -113,6 +113,11 @@ void JarvisServer::Stop()
 	while (!_fHasQuit){ Sleep(0); }// wait for signal that we really closed
 }
 
+IDataHandler* JarvisServer::PdhGet()
+{
+	return _pdh;
+}
+
 /********************************/
 /*** PRIVATE MEMBER FUNCTIONS ***/
 /********************************/

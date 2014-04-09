@@ -31,6 +31,7 @@ namespace JarvisSS
 		HANDLE StartOnNewThread();	
 		void Start();
 		void Stop();
+		IDataHandler* PdhGet();
 		
 	private:
 		// structure definitions
