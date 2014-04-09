@@ -143,16 +143,20 @@ bool JarvisSocket::FConnect()
 bool JarvisSocket::FSend(const char* pbData, int iSize)
 {
 	bool fSucceded;
+	bool fRetry = true;
 	if (!FIsConnected())
 		return false;
-	
-	fSucceded= (SOCKET_ERROR != send(_sock, pbData, iSize, 0)) && FValid();
 
-	if (!fSucceded)
+	while (fRetry)
 	{
-		switch (int iErr = WSAGetLastError())
+		fRetry = false;
+		fSucceded = (SOCKET_ERROR != send(_sock, pbData, iSize, 0)) && FValid();
+
+		if (!fSucceded)
 		{
-			// Connection was Lost cases
+			switch (int iErr = WSAGetLastError())
+			{
+				// Connection was Lost cases
 			case WSAENETDOWN:
 			case WSAENETUNREACH:
 			case WSAENETRESET:
@@ -164,9 +168,14 @@ bool JarvisSocket::FSend(const char* pbData, int iSize)
 			case WSAEDISCON:
 				OnDisconnect();
 				break;
-			//Fatal Error cases
+			case WSAEWOULDBLOCK:
+				fRetry = true; // Well we are sending, so we don't want to return, really, if we haven't sent for this silly reason
+				Sleep(0);      // although we should give the thread a chance to breath and release if it should
+				break;
+				//Fatal Error cases
 			default:
-				FatalErr(L"WSAGetLastError: " + iErr);			
+				FatalErr(L"WSAGetLastError: " + iErr);
+			}
 		}
 	}
 
