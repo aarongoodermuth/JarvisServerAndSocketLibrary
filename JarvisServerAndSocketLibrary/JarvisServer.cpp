@@ -160,12 +160,13 @@ DWORD WINAPI JarvisServer::SocketThreadFunc(void* pParams)
 	{
 		// receive data on socket and handle the data
 		dhp.pbBuf = socktp.pjsock->PbRecieve();
-		if (NULL == dhp.pbBuf)
+		if (!dhp.pjsock->_fConnected)
 		{
 			socktp.pjserv->OnDisconnect();
 			break;
 		}
-		(socktp.pjserv->_pdh)->HandleData(&dhp);
+		if (NULL == dhp.pbBuf)
+			(socktp.pjserv->_pdh)->HandleData(&dhp);
 	}	
 
 	delete socktp.pjsock;

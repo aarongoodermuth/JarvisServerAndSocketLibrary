@@ -55,7 +55,7 @@ JarvisSocket::JarvisSocket(const JarvisSocket& other)
 	_pfnOnDisconnect = other._pfnOnDisconnect;
 	_fConnected = other._fConnected;
 
-	memcpy_s(_bRecieve, BUF_SIZE, other._bRecieve, BUF_SIZE);
+	memcpy_s(_bReceive, BUF_SIZE, other._bReceive, BUF_SIZE);
 }
 
 JarvisSocket& JarvisSocket::operator=(const JarvisSocket& other)
@@ -66,7 +66,7 @@ JarvisSocket& JarvisSocket::operator=(const JarvisSocket& other)
 	_pfnOnDisconnect = other._pfnOnDisconnect;
 	_fConnected = other._fConnected;
 
-	memcpy_s((void*)_bRecieve[0], BUF_SIZE, other._bRecieve, BUF_SIZE);
+	memcpy_s((void*)_bReceive[0], BUF_SIZE, other._bReceive, BUF_SIZE);
 	return *this;
 }
 
@@ -95,13 +95,11 @@ SOCKET JarvisSocket::get()
 
 char* JarvisSocket::PbRecieve()
 {
-	ZeroMemory(&_bRecieve[0], BUF_SIZE);
-	int cbRecieved = recv(_sock, _bRecieve, BUF_SIZE, 0);
-	if (cbRecieved)
-	{
-		_fConnected = true;
-	}
-	return (FValid() && cbRecieved > 0) ? &_bRecieve[0] : NULL;
+	ZeroMemory(&_bReceive[0], BUF_SIZE);
+	_cbReceive = recv(_sock, _bReceive, BUF_SIZE, 0);
+	_fConnected = !!_cbReceive;
+	_cbReceive = max(0, _cbReceive);
+	return (FValid() && _cbReceive) ? &_bReceive[0] : NULL;
 }
 
 bool JarvisSocket::FConnect()
@@ -271,7 +269,8 @@ int JarvisSocket::IPortFromPsockaddr(sockaddr* client_addr)
 
 void JarvisSocket::InitMBufs()
 {
-	ZeroMemory(&_bRecieve, BUF_SIZE);
+	_cbReceive = 0;
+	ZeroMemory(&_bReceive, BUF_SIZE);
 }
 
 void JarvisSocket::OnDisconnect()

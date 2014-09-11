@@ -50,6 +50,7 @@ namespace JarvisSS
 		DisconnectFunctionPointer _pfnOnDisconnect;
 		SOCKET _sock;
 		char _bRecieve[BUF_SIZE];
+		int _cbReceive;
 		std::string _strIp;
 		int _iPort;
 
