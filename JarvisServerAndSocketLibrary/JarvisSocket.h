@@ -49,7 +49,7 @@ namespace JarvisSS
 		bool _fConnected;
 		DisconnectFunctionPointer _pfnOnDisconnect;
 		SOCKET _sock;
-		char _bRecieve[BUF_SIZE];
+		char _bReceive[BUF_SIZE];
 		int _cbReceive;
 		std::string _strIp;
 		int _iPort;
