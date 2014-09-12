@@ -165,7 +165,7 @@ DWORD WINAPI JarvisServer::SocketThreadFunc(void* pParams)
 			socktp.pjserv->OnDisconnect();
 			break;
 		}
-		if (NULL == dhp.pbBuf)
+		if (NULL != dhp.pbBuf)
 			(socktp.pjserv->_pdh)->HandleData(&dhp);
 	}	
 
