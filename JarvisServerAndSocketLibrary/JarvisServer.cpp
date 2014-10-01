@@ -4,7 +4,14 @@
 #include "JarvisSocket.h"
 #include "IDataHandler.h"
 
+#include <math.h>
 using namespace JarvisSS;
+
+/****************************/
+/*** FORWARD DELCARATIONS ***/
+/****************************/
+typedef unsigned int uint;
+uint DmsecSleepNowFromDmsecSleep(uint dmsecNow);
 
 /**********************************/
 /*** CONSTRUCTORS / DESTRUCTORS ***/
@@ -45,6 +52,7 @@ void JarvisServer::Start()
 	sockaddr addr;
 	SocketThreadParams* socktp;
 	_fHasQuit = false;
+	uint dmsecSleep = 0;
 
 	// create socket to listen on and set it to listen
 	SOCKET sockListen = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -87,11 +95,18 @@ void JarvisServer::Start()
 	while (!_fQuit)
 	{
 		// release the thread if we should....i think?
-		Sleep(0);
+		Sleep(dmsecSleep);
 
 		// accept connections
 		if (INVALID_SOCKET == (sockTemp = accept(sockListen, &addr, NULL)))
+		{
+			dmsecSleep = DmsecSleepNowFromDmsecSleep(dmsecSleep);
 			continue;
+		}
+		else
+		{
+			dmsecSleep = 0;
+		}
 
 		// create JarvisSocket from socket
 		pjsock = new JarvisSocket(sockTemp, &addr);
@@ -180,4 +195,10 @@ void JarvisServer::OnDisconnect()
 	{
 		(*_pfnOnDisconnect)();
 	}
+}
+
+uint DmsecSleepNowFromDmsecSleep(uint dmsecNow)
+{
+	const uint MAX_SLEEP = 100;
+	return min(MAX_SLEEP, dmsecNow + 1);
 }
