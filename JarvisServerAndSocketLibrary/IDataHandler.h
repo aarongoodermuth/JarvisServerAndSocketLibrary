@@ -9,7 +9,7 @@ namespace JarvisSS
 		IDataHandler() {};
 		virtual ~IDataHandler() {};
 
-		virtual void HandleData(JarvisServer::DataHandlerParams* dhp) {};
+		virtual void HandleData(JarvisServer::DataHandlerParams* dhp) = 0;
 	};
 
 }
