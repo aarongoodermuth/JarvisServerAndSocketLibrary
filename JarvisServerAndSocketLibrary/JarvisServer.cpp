@@ -55,12 +55,12 @@ void JarvisServer::Start()
 	uint dmsecSleep = 0;
 
 	// create socket to listen on and set it to listen
-	SOCKET sockListen = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	_sockListen = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	//JarvisServer::CreateListenSocket(&sockListen);
 
 	/* should be taken care of by CreateSockListen. keeping around til I know that function works. */
 	//= socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if (INVALID_SOCKET == sockListen)
+	if (INVALID_SOCKET == _sockListen)
 		JarvisSocket::FatalErr(L"Listen socket creation failed.");
 
 	sockaddr_in service;
@@ -68,7 +68,7 @@ void JarvisServer::Start()
 	service.sin_addr.s_addr = inet_addr("0.0.0.0");
 	service.sin_port = htons(_iPort);	// no idea if this is right. look here for bugs if the port isnt the right port
 
-	if (SOCKET_ERROR == bind(sockListen, (SOCKADDR *)& service, sizeof (service)))
+	if (SOCKET_ERROR == bind(_sockListen, (SOCKADDR *)& service, sizeof (service)))
 	{
 		if (WSAEADDRINUSE == WSAGetLastError())
 		{
@@ -82,30 +82,22 @@ void JarvisServer::Start()
 		}
 	}
 
-	if (0 != listen(sockListen, SOMAXCONN))
+	if (0 != listen(_sockListen, SOMAXCONN))
 		JarvisSocket::FatalErr(L"Listen socket listening failed.");
 
 	// make non blocking
-	u_long NonBlock = 1;
-	if (ioctlsocket(sockListen, FIONBIO, &NonBlock) == SOCKET_ERROR)
+	u_long NonBlock = 0;
+	if (ioctlsocket(_sockListen, FIONBIO, &NonBlock) == SOCKET_ERROR)
 	{
 		assert(false);
 	}
 
-	while (!_fQuit)
+	while (true)
 	{
-		// release the thread if we should....i think?
-		Sleep(dmsecSleep);
-
 		// accept connections
-		if (INVALID_SOCKET == (sockTemp = accept(sockListen, &addr, NULL)))
+		if (INVALID_SOCKET == (sockTemp = accept(_sockListen, &addr, NULL)))
 		{
-			dmsecSleep = DmsecSleepNowFromDmsecSleep(dmsecSleep);
-			continue;
-		}
-		else
-		{
-			dmsecSleep = 0;
+			return;
 		}
 
 		// create JarvisSocket from socket
@@ -117,15 +109,11 @@ void JarvisServer::Start()
 		socktp->pjserv = this;
 		CreateThread(NULL, 0, JarvisServer::SocketThreadFunc, socktp, 0, NULL);
 	}
-
-	closesocket(sockListen); // TODO: Check return value
-	_fHasQuit = true;
 }
 
 void JarvisServer::Stop()
 {
-	_fQuit = true;
-	while (!_fHasQuit){ Sleep(0); }// wait for signal that we really closed
+	closesocket(_sockListen);
 }
 
 IDataHandler* JarvisServer::PdhGet()

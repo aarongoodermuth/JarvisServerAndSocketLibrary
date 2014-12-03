@@ -47,6 +47,7 @@ namespace JarvisSS
 		bool _fQuit;
 		bool _fHasQuit;
 		int _iPort;
+		SOCKET _sockListen;
 	
 		// member functions
 		static void Setup();
