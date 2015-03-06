@@ -27,7 +27,7 @@ namespace JarvisSS
 		
 		// member functions
 		SOCKET get();
-		char* PbRecieve();
+		char* PbRecieve(bool* pfBufferTooSmall);
 		bool FConnect();
 		bool FSend(const char*, int);
 		bool FValid();

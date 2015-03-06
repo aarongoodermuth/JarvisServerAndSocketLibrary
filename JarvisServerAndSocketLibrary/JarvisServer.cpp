@@ -154,7 +154,7 @@ DWORD WINAPI JarvisServer::SocketThreadFunc(void* pParams)
 	while(true) // while connection is alive
 	{
 		// receive data on socket and handle the data
-		dhp.pbBuf = socktp.pjsock->PbRecieve();
+		dhp.pbBuf = socktp.pjsock->PbRecieve(&dhp.fBufTooSmall);
 		if (!dhp.pjsock->_fConnected)
 		{
 			socktp.pjserv->OnDisconnect();

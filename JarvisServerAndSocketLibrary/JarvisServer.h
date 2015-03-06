@@ -17,6 +17,7 @@ namespace JarvisSS
 			char* pbBuf;
 			JarvisSocket* pjsock;
 			JarvisServer* pjserv;
+			bool fBufTooSmall; // pbBuf will not hold all the data. You should either use pistm, or call pbBuf repeatedly until this flag is false
 		};
 		typedef void(*DataHandlerFunctionPointer)(DataHandlerParams*);
 		typedef void(*DisconnectFunctionPointer)();

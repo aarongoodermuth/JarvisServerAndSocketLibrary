@@ -93,12 +93,16 @@ SOCKET JarvisSocket::get()
 	return FValid() ? _sock : INVALID_SOCKET;
 }
 
-char* JarvisSocket::PbRecieve()
+char* JarvisSocket::PbRecieve(bool* pfBufferTooSmall)
 {
+	u_long fMoreRemaining;
 	ZeroMemory(&_bReceive[0], BUF_SIZE);
 	_cbReceive = recv(_sock, _bReceive, BUF_SIZE, 0);
 	_fConnected = !!_cbReceive;
 	_cbReceive = max(0, _cbReceive);
+	if (ioctlsocket(_sock, FIONREAD, &fMoreRemaining))
+		NormalErr(L"Something went wrong with check of more data on the socket.");
+	*pfBufferTooSmall = fMoreRemaining;
 	return (FValid() && _cbReceive) ? &_bReceive[0] : NULL;
 }
 
