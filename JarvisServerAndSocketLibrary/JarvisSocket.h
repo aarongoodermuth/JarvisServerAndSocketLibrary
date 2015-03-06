@@ -26,7 +26,6 @@ namespace JarvisSS
 		~JarvisSocket();
 		
 		// member functions
-		void DestroySock();
 		SOCKET get();
 		char* PbRecieve();
 		bool FConnect();
@@ -59,7 +58,6 @@ namespace JarvisSS
 		static void Teardown();
 		static std::string StrAddrFromPsockaddr(sockaddr*);
 		static int IPortFromPsockaddr(sockaddr*);
-
 		void InitMBufs();
 		void OnDisconnect();
 	};
