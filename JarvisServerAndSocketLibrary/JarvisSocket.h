@@ -2,6 +2,7 @@
 
 #include <WinSock2.h>
 #include <WS2tcpip.h>
+#include <Objidl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
@@ -30,6 +31,7 @@ namespace JarvisSS
 		char* PbRecieve(bool* pfBufferTooSmall);
 		bool FConnect();
 		bool FSend(const char*, int);
+		bool FSend(IStream* pistm, unsigned int cb = -1);
 		bool FValid();
 		bool FIsConnected();
 		std::string getStrIp();

@@ -4,6 +4,8 @@
 
 using namespace JarvisSS;
 
+#define CB_OUT_BUF 4096
+
 /***************************/
 /*** STATIC INITIALIZERS ***/
 /***************************/
@@ -182,6 +184,30 @@ bool JarvisSocket::FSend(const char* pbData, int iSize)
 	}
 
 	return fSucceded;
+}
+
+bool JarvisSocket::FSend(IStream* pistm, unsigned int cb)
+{
+	bool fOk = true;
+	unsigned int cbRemaining = max(cb, CB_OUT_BUF);
+	unsigned int cbCurBuf;
+	ULONG cbRead;
+	char* pBuf = new char[CB_OUT_BUF];
+	if (!pBuf)
+		return false;
+
+	while (fOk && cbRemaining)
+	{
+		cbCurBuf = min(cbRemaining, CB_OUT_BUF);
+		pistm->Read(pBuf, cbCurBuf, &cbRead);
+		fOk = (cbRead == cbCurBuf) && FSend(pBuf, cbCurBuf);
+		if (cbRead != cbCurBuf)
+			assert(false);
+		cbRemaining -= cbCurBuf;
+	}
+
+	delete pBuf;
+	return fOk;
 }
 
 bool JarvisSocket::FValid()
