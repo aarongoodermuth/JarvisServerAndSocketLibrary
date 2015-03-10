@@ -102,7 +102,7 @@ char* JarvisSocket::PbRecieve(bool* pfBufferTooSmall)
 	_cbReceive = max(0, _cbReceive);
 	if (ioctlsocket(_sock, FIONREAD, &fMoreRemaining))
 		NormalErr(L"Something went wrong with check of more data on the socket.");
-	*pfBufferTooSmall = fMoreRemaining;
+	*pfBufferTooSmall = !!fMoreRemaining;
 	return (FValid() && _cbReceive) ? &_bReceive[0] : NULL;
 }
 
