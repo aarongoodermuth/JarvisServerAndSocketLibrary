@@ -186,23 +186,24 @@ bool JarvisSocket::FSend(const char* pbData, int iSize)
 	return fSucceded;
 }
 
-bool JarvisSocket::FSend(IStream* pistm, unsigned int cb)
+bool JarvisSocket::FSend(std::istream* pistm, unsigned int cb)
 {
 	bool fOk = true;
+	bool fContinue = true;
 	unsigned int cbRemaining = max(cb, CB_OUT_BUF);
 	unsigned int cbCurBuf;
-	ULONG cbRead;
+	unsigned int cbRead;
 	char* pBuf = new char[CB_OUT_BUF];
 	if (!pBuf)
 		return false;
 
-	while (fOk && cbRemaining)
+	while (fContinue && cbRemaining)
 	{
 		cbCurBuf = min(cbRemaining, CB_OUT_BUF);
-		pistm->Read(pBuf, cbCurBuf, &cbRead);
-		fOk = (cbRead == cbCurBuf) && FSend(pBuf, cbCurBuf);
-		if (cbRead != cbCurBuf)
-			assert(false);
+		pistm->read(pBuf, cbCurBuf);
+		cbRead = (unsigned int)pistm->gcount();
+		fOk = FSend(pBuf, cbRead);
+		fContinue = (cbRead == cbCurBuf) && fOk;
 		cbRemaining -= cbCurBuf;
 	}
 
